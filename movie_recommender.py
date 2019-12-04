@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import similar_movie
 
 
 # read ratings table
@@ -19,34 +20,55 @@ ratings = pd.merge(movies, ratings)
 movieRatings = ratings.pivot_table(index=['user_id'],columns=['title'],values='rating')
 # print(movieRatings.head())
 
+# load my own ratings
+myRatings = movieRatings.loc[999].dropna()
+print(myRatings)
+
+# loop through my ratings to identify movies similar to the ones I did not like
+for i in range(0, len(myRatings.index)):
+
+    # pick movies that I rated 2 and less
+    if myRatings[i] <= 2:
+
+        # identify similar movies to the ones I did not like
+        unlikelyMovies = similar_movie.findSimilarMovies(myRatings.index[i])
+        unlikelyMoviesSimilarity = unlikelyMovies['similarity']
+
+        # loop through unlikely movies to identify ones to drop
+        for j in range(0, len(unlikelyMoviesSimilarity.index)):
+
+            # drop movies from the consideration that are at least 50% similar
+            if unlikelyMoviesSimilarity[j] >= 0.5:
+                movieRatings.drop(unlikelyMoviesSimilarity.index[j], axis=1)
+                print('You are not going to like ' + unlikelyMoviesSimilarity.index[j])
+
+
 # get correlation score between every pair of movies
 corrMatrix = movieRatings.corr()
 # print(corrMatrix.head())
 
 # drop movie similarities that are based on ratings of less than 100 users
 corrMatrix = movieRatings.corr(method='pearson', min_periods=50)
+# corrMatrix = movieRatings.corr(method='kendall', min_periods=50)
+# corrMatrix = movieRatings.corr(method='spearman', min_periods=50)
 # print(corrMatrix.head())
-
-# load my own ratings
-myRatings = movieRatings.loc[999].dropna()
-print(myRatings)
 
 # loop through my ratings to find similar movies
 simCandidates = pd.Series()
 for i in range(0, len(myRatings.index)):
-    print ("Adding similarities for " + myRatings.index[i] + "...")
+    print ("\nAdding similarities for " + myRatings.index[i] + "...")
     # retrieve similar movies to the current one
     sims = corrMatrix[myRatings.index[i]].dropna()
     sims.sort_values(inplace = True, ascending = False)
-    print(sims)
+    print(sims[:3])
     # scale similarity by my rating
     sims = sims.map(lambda x: x * myRatings[i])
     simCandidates = simCandidates.append(sims)
-    
+
 # some more processing
 simCandidates = simCandidates.groupby(simCandidates.index).sum() # group by
 simCandidates.sort_values(inplace = True, ascending = False) # sort
 finalSims = simCandidates.drop(myRatings.index) # drop movies that I already rated
 
 print("\n\nRESULT: ")
-print(finalSims)
+print(finalSims[:10])
