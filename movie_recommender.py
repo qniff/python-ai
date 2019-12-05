@@ -27,7 +27,7 @@ print(myRatings)
 # loop through my ratings to identify movies similar to the ones I did not like
 for i in range(0, len(myRatings.index)):
 
-    # pick movies that I rated 2 and less
+    # pick movies that I rated low
     if myRatings[i] <= 2:
 
         # identify similar movies to the ones I did not like
@@ -35,9 +35,9 @@ for i in range(0, len(myRatings.index)):
         unlikelyMoviesSimilarity = unlikelyMovies['similarity']
 
         # loop through unlikely movies to identify ones to drop
-        for j in range(0, len(unlikelyMoviesSimilarity.index)):
+        for j in range(0, len(unlikelyMoviesSimilarity)):
 
-            # drop movies from the consideration that are at least 50% similar
+            # drop unlikely movies
             if unlikelyMoviesSimilarity[j] >= 0.5:
                 movieRatings.drop(unlikelyMoviesSimilarity.index[j], axis=1)
                 print('You are not going to like ' + unlikelyMoviesSimilarity.index[j])
@@ -47,7 +47,7 @@ for i in range(0, len(myRatings.index)):
 corrMatrix = movieRatings.corr()
 # print(corrMatrix.head())
 
-# drop movie similarities that are based on ratings of less than 100 users
+# drop movie similarities that are based on ratings of less than * users
 corrMatrix = movieRatings.corr(method='pearson', min_periods=50)
 # corrMatrix = movieRatings.corr(method='kendall', min_periods=50)
 # corrMatrix = movieRatings.corr(method='spearman', min_periods=50)
